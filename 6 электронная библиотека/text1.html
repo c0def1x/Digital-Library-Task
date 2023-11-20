@@ -3555,7 +3555,39 @@ public async Task&amp;lt;IActionResult&amp;gt; UpdateBook(UpdateBookViewModel bo
     <span class="hljs-keyword">return</span> RedirectToAction(<span class="hljs-string">"Index"</span>, <span class="hljs-string">"Books"</span>);
 }
 </code></pre><p>Запустите приложение, и проверьте работоспособность.</p><h2 id="5.3-удаление-книги"><a name="5.3-удаление-книги" href="#5.3-удаление-книги"></a>5.3 Удаление книги</h2><p>Реализуйте <strong>самостоятельно</strong>.</p><ul>
-<li>при нажатии по ссылке пользователь переходит на новое представление;</li><li>в новом представлении выведена краткая информация о книге;</li><li>в новом представлении есть вопрос о том, уверен ли пользователь, что хочет удалить книгу;</li><li>есть возможность нажать на кнопку удаления, после чего книга будет удалена, а пользователь перенаправлен на “/books/index”;</li><li>есть возможность вернуться к списку книг.</li></ul><h1 id="6.-логгирование"><a name="6.-логгирование" href="#6.-логгирование"></a>6. Логгирование</h1><h1 id="7.-публикация"><a name="7.-публикация" href="#7.-публикация"></a>7. Публикация</h1>
+<li>при нажатии по ссылке пользователь переходит на новое представление;</li><li>в новом представлении выведена краткая информация о книге;</li><li>в новом представлении есть вопрос о том, уверен ли пользователь, что хочет удалить книгу;</li><li>есть возможность нажать на кнопку удаления, после чего книга будет удалена, а пользователь перенаправлен на “/books/index”;</li><li>есть возможность вернуться к списку книг.</li></ul><h1 id="6.-логирование"><a name="6.-логирование" href="#6.-логирование"></a>6. Логирование</h1><p>Установите библиотеку Serilog. Настройте логирование в файл. Внедрите через конструктор контроллера <code>ILogger&lt;T&gt;</code> и используйте его в операторах <code>try</code>. В случае возникновения ошибок, запишите соотвествующие сообщения в журнал с уровнем <code>Warning</code> или <code>Error</code>.</p><h1 id="7.-публикация"><a name="7.-публикация" href="#7.-публикация"></a>7. Публикация</h1><p>При публикации приложения в IIS, мы не можем использовать базу данных <code>LocalDb</code> (ее не будет видно). Существуют следующие решения:</p><ul>
+<li>можно сделать, чтобы приложение в IIS запускалось от лица пользователя системы. Базу данных будет видно, но это влечет за собой проблемы в безопасности;</li><li>можно “отсоединить” базу, создав Shared Instance;</li><li>можно просто не использовать LocalDb, вместо этого используя Express, или другой сервер, где размещена база данных.</li></ul><p>Используем Sql Server Express.</p><p>Сперва добавьте строку подключения в appsettings:</p><pre class="json hljs"><code class="json" data-origin="<pre><code class=&quot;json&quot;>&quot;express&quot;: &quot;Server=.\\SQLEXPRESS; Database=elibrary_Ivanov; Integrated Security = true; Trust Server Certificate = true&quot;
+</code></pre>">"express": "Server=.\\SQLEXPRESS; Database=elibrary_Ivanov; Integrated Security = true; Trust Server Certificate = true"
+</code></pre><p>Измените <code>Program.cs</code>. Закомментируйте строки для начального посева:</p><pre class="cs hljs"><code class="cs" data-origin="<pre><code class=&quot;cs&quot;>//try
+//{
+//    optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString(&quot;local&quot;));
+//    using (var context = new ELibraryContext(optionsBuilder.Options))
+//    {
+//        EFInitialSeed.Seed(context);
+//    }
+//}
+//catch (Exception e)
+//{
+//    Log.Error(e.Message);
+//}
+</code></pre>"><span class="hljs-comment">//try</span>
+<span class="hljs-comment">//{</span>
+<span class="hljs-comment">//    optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("local"));</span>
+<span class="hljs-comment">//    using (var context = new ELibraryContext(optionsBuilder.Options))</span>
+<span class="hljs-comment">//    {</span>
+<span class="hljs-comment">//        EFInitialSeed.Seed(context);</span>
+<span class="hljs-comment">//    }</span>
+<span class="hljs-comment">//}</span>
+<span class="hljs-comment">//catch (Exception e)</span>
+<span class="hljs-comment">//{</span>
+<span class="hljs-comment">//    Log.Error(e.Message);</span>
+<span class="hljs-comment">//}</span>
+</code></pre><p>Измените название строки подключения на “express”:</p><pre class="cs hljs"><code class="cs" data-origin="<pre><code class=&quot;cs&quot;>opt.UseSqlServer(builder.Configuration.GetConnectionString(&quot;express&quot;)
+</code></pre>">opt.UseSqlServer(builder.Configuration.GetConnectionString(<span class="hljs-string">"express"</span>)
+</code></pre><p>Выполните <code>Update-Database</code>.</p><p>Присоединитесь к БД (по адресу <code>.\SQLEXPRESS</code>) и добавьте роли пользователя (или закодируйте их в начальном посеве).</p><p>Раскоментируйте строки для начального посева и запустите приложение. Проверьте работоспособность.</p><p>В SSMS найдите пункт Безопасность -&gt; Имена для входа. Создайте имя для входа:</p><p><img src="67.png" alt=""><br><img src="68.png" alt=""></p><p>Создайте пользователя для базы данных:<br><img src="69.png" alt=""><br><img src="70.pnG" alt=""><br><img src="71.png" alt=""><br>Измените строку подключения:</p><pre class="json hljs"><code class="json" data-origin="<pre><code class=&quot;json&quot;>&quot;express&quot;: &quot;Server=.\\SQLEXPRESS; Database=elibrary_Ivanov; User Id = elibrary_ivanov; Password = ВАШПАРОЛЬ; Trust Server Certificate = true&quot;
+</code></pre>">"express": "Server=.\\SQLEXPRESS; Database=elibrary_Ivanov; User Id = elibrary_ivanov; Password = ВАШПАРОЛЬ; Trust Server Certificate = true"
+</code></pre><p>Проверьте работоспособность приложения.</p><p>Откройте в Visual Studio меню “Сборка-&gt;Опубликовать”. Выберите профиль “Папка”<br><img src="65.png" alt=""><br>Выполните публикацию. Откройте каталог, куда было опубликовано приложение и изучите его содержимое.<br><img src="66.png" alt=""></p><p>Запустите “Диспетчер служб IIS”. Нажмите ПКМ на сайты и выберите “Добавить сайт”:<br><img src="72.png" alt=""><br>Укажите настройки. В качестве пути задайте путь до каталога с опубликованным приложением. В качестве порта используйте <strong>произвольный свободный порт</strong>.<br><img src="73.png" alt=""></p><p>Нажмите “Редактировать разрешения”, чтобы открылось окно изменения параметров папки:<br><img src="74.png" alt=""></p><p>Добавьте группы <code>Пользователи</code> и <code>IIS_IUSRS</code>. Установите им разрешения на чтение и выполнение:<br><img src="75.Png" alt=""></p><p>Перейдите в пулы приложений:<br><img src="76.png" alt=""></p><p>Щелкните дважды по вашему пулу, и измените настройки:<br><img src="77.png" alt=""></p><p>Перезапустите пул. Запустите сайт. Проверьте его работоспособность.</p><p>Узнайте ip-адрес вашего компьюьтера. Попробуйте получить доступ к сайту через браузер с другой машины.</p><p>Дополнительно:</p><ul>
+<li>проверьте, записываются ли логи в файл log.txt;</li><li>если такого файла нет, то создайте его вручную;</li><li>задайте в свойствах этого файла возможность записи для <code>Пользователи</code> и <code>IIS_IUSRS</code>;</li><li>перезапустите сайт и убедитесь, что логи корректно записываются.</li></ul>
 
 <footer style="position:fixed; font-size:.8em; text-align:right; bottom:0px; margin-left:-25px; height:20px; width:100%;">generated by <a href="http://pad.haroopress.com" target="_blank">haroopad</a></footer>
 </body>
